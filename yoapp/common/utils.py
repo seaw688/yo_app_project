@@ -8,3 +8,5 @@ ROLES = (
     ('OWNER', 'OWNER'),
     ('MANAGER', 'MANAGER'),
 )
+
+DEFAULT_USER_ROLE = 'CUSTOMER'

@@ -21,7 +21,8 @@ from rest_framework.authtoken.models import Token
 from django.contrib.auth import get_user_model
 from django.apps import apps
 
-from .serializers import OfferSerializer, UserSerializer, CategorySerializer, ShopSerializer
+from .serializers import OfferSerializer, CategorySerializer, ShopSerializer, \
+    CustomUserSerializer
 
 from rest_framework import status
 from rest_framework.response import Response
@@ -29,11 +30,34 @@ from rest_framework.views import APIView
 from rest_framework.settings import api_settings
 from rest_framework.pagination import LimitOffsetPagination
 
+from django.contrib.auth import (
+    login as django_login,
+    logout as django_logout
+)
+from django.core.exceptions import ObjectDoesNotExist
+
+from rest_auth.models import TokenModel
+from rest_auth.app_settings import create_token
+
+
 
 UserModel = get_user_model()
 CategoryModel = apps.get_model('common', 'Category')
 OfferModel = apps.get_model('yomarket', 'Offer')
 ShopModel = apps.get_model('yomarket', 'Shop')
+
+
+def custom_api_response(serializer=None, content=None, metadata=None):
+    if content:
+        response = {'metadata': {}, 'content': content}
+        return response
+
+    if not hasattr(serializer, '_errors'):
+        response = {'metadata': {}, 'content': serializer.data}
+    else:
+        response = {'metadata': {}, 'errors': serializer._errors}
+    return response
+
 
 
 class CategoryList(APIView):
@@ -48,7 +72,8 @@ class CategoryList(APIView):
         result_page = paginator.paginate_queryset(categories, request)
         serializer = CategorySerializer(result_page, many=True) # , context={'request': request}
         #print (serializer)
-        response = Response(serializer.data, status=status.HTTP_200_OK)
+        #response = Response(serializer.data, status=status.HTTP_200_OK)
+        response = Response(custom_api_response(serializer), status=status.HTTP_200_OK)
         return response
 
     # def get(self, request, pk, format=None):
@@ -62,29 +87,20 @@ class CategoryList(APIView):
     #     return response
 
 
-# class CategoryViewSet(viewsets.ReadOnlyModelViewSet):
-#     permission_classes = (AllowAny,)
-#     queryset = CategoryModel.objects.all()
-#     serializer_class = CategorySerializer
-
 
 class OfferList(APIView):
     permission_classes = (AllowAny,)
 
     def get(self, request, format=None, pk=None):
-        #print (request.user)
         offers = OfferModel.objects.all()
         if pk is not None:
             offers = get_object_or_404(offers, pk=pk)
-            #print (offers)
-            #offers = OfferModel.objects.filter(pk=pk).all()
             serializer = OfferSerializer(offers)
-            #print(serializer.is_valid())
-            #print (serializer.data)
-            #print(serializer.errors)
         else:
             serializer = OfferSerializer(offers, many=True)
-        return Response(serializer.data)
+        response = Response(custom_api_response(serializer), status=status.HTTP_200_OK)
+        #return Response(serializer.data)
+        return response
 
 
 class ShopList(APIView):
@@ -93,28 +109,51 @@ class ShopList(APIView):
     def get(self, request, format=None):
         shops = ShopModel.objects.all()
         serializer = ShopSerializer(shops, many=True)
-        return Response(serializer.data)
+        #return Response(serializer.data)
+        return Response(custom_api_response(serializer), status=status.HTTP_200_OK)
 
 
 class Logout(APIView):
-    queryset = UserModel.objects.all()
+    #queryset = UserModel.objects.all()
 
     def get(self, request, format=None):
         # simply delete the token to force a login
-        request.user.auth_token.delete()
-        return Response({"detail": "Successfully user logged out"}, status=status.HTTP_200_OK)
+        try:
+            request.user.auth_token.delete()
+        except (AttributeError, ObjectDoesNotExist):
+            pass
+
+        django_logout(request)
+
+        content = {"detail": "Successfully user logged out"}
+        return Response(custom_api_response(None, content), status=status.HTTP_200_OK)
+        #return Response({"detail": "Successfully user logged out"}, status=status.HTTP_200_OK)
 
 
 class UserViewSet(viewsets.ModelViewSet):
     queryset = UserModel.objects.filter(role='CUSTOMER').all()
-    serializer_class = UserSerializer
+    serializer_class = CustomUserSerializer
     permission_classes = (IsAuthenticated,)
 
     def retrieve(self, request, pk=None):
         queryset = UserModel.objects.filter(role='CUSTOMER').all()
         user = get_object_or_404(queryset, pk=pk)
-        serializer = UserSerializer(user)
-        return Response(serializer.data)
+        serializer = CustomUserSerializer(user)
+        #return Response(serializer.data)
+        response = Response(custom_api_response(serializer), status=status.HTTP_200_OK)
+        return response
+
+    def list(self, request, *args, **kwargs):
+        users = UserModel.objects.filter(role='CUSTOMER').all()
+
+        # page = self.paginate_queryset(queryset)
+        # if page is not None:
+        #     serializer = self.get_serializer(page, many=True)
+        #     return self.get_paginated_response(serializer.data)
+        #serializer = self.get_serializer(queryset, many=True)
+        serializer = CustomUserSerializer(users, many=True)
+
+        return Response(custom_api_response(serializer), status=status.HTTP_200_OK)
 
     #@csrf_exempt
     # def create(self, validated_data):
@@ -125,6 +164,34 @@ class UserViewSet(viewsets.ModelViewSet):
     #     print (user)
     #     user.save()
     #     return user
+
+
+@api_view(['POST'])
+@permission_classes(())
+def register_view(request):
+    # обработчик регистрации
+    serializer = CustomUserSerializer(data=request.data)
+    if serializer.is_valid():
+        serializer.save()
+        return Response(custom_api_response(serializer), status=status.HTTP_201_CREATED)
+    else:
+        return Response(custom_api_response(serializer), status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['POST'])
+@permission_classes(())
+def login_view(request):
+    serializer = AuthTokenSerializer(data=request.data)
+    if serializer.is_valid():
+        user = serializer.validated_data['user']
+        token = create_token(TokenModel, user, serializer)
+        #token = Token.objects.get(user=user)
+        django_login(request, user)
+        content = {'token': token.key, 'username': user.username, 'id': user.id}
+        return Response(custom_api_response(serializer, content), status=status.HTTP_200_OK)
+        #return Response({'token': token.key, 'username': user.username, 'id': user.id})
+    else:
+        return Response(custom_api_response(serializer), status=status.HTTP_400_BAD_REQUEST)
 
 
 

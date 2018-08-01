@@ -5,7 +5,7 @@ from django.db.models.signals import post_save
 from . import receivers
 from django.contrib.auth import get_user_model
 from django.conf import settings
-from . utils import ROLES
+from . utils import ROLES, DEFAULT_USER_ROLE
 
 
 class User(AbstractBaseUser, PermissionsMixin):
@@ -17,7 +17,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     is_admin = models.BooleanField(default=False)
     is_staff = models.BooleanField(default=False)
     date_joined = models.DateTimeField(('date joined'), auto_now_add=True)
-    role = models.CharField(max_length=50, choices=ROLES, default='CUSTOMER')
+    role = models.CharField(max_length=50, choices=ROLES, default=DEFAULT_USER_ROLE)
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['username', ]
@@ -57,8 +57,11 @@ class Region(models.Model):
 
 
 
-try:
-    post_save.connect(receivers.create_auth_token, sender=get_user_model())
-    print ("qwerty - 12345")
-except Exception as e:
-    print (e)
+post_save.connect(receivers.create_auth_token, sender=get_user_model())
+
+
+# try:
+#     post_save.connect(receivers.create_auth_token, sender=get_user_model())
+#     #print ("qwerty - 12345")
+# except Exception as e:
+#     print (e)

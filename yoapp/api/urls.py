@@ -4,6 +4,7 @@ from rest_framework import routers
 from rest_framework.urlpatterns import format_suffix_patterns
 from .views import UserViewSet, OfferList, ShopList, CategoryList #, UserLoginView
 from django.contrib.auth import views
+from . import views as api_view
 #from django.views.decorators.csrf import csrf_exempt
 #from rest_framework_jwt.views import obtain_jwt_token
 
@@ -25,10 +26,10 @@ login_kwargs = {}
 urlpatterns += [
     # url(r'^user/login/$', UserLoginView.as_view(), login_kwargs, name='login'),
     # url(r'^logout/$', views.logout, name='logout'),
-    url(r'^rest-auth/', include('rest_auth.urls')),
-    url(r'^rest-auth/registration/', include('rest_auth.registration.urls')),
+    #url(r'^rest-auth/', include('rest_auth.urls')),
+    #url(r'^rest-auth/registration/', include('rest_auth.registration.urls')),
     #url(r'^api-token-auth/', obtain_jwt_token),
-    url(r'^logout/', Logout.as_view()),
+
     #url(r'^account/', include('account.urls')),
 
     url(r'^categories/$', CategoryList.as_view()),
@@ -37,10 +38,12 @@ urlpatterns += [
     url(r'^shops/$', ShopList.as_view(), name='shop-list'),
     url(r'^shops/(?P<pk>[^/.]+)/$', ShopList.as_view(), name='shop-detail'),
 
-    url(r'^owner/registration/$', Logout.as_view(), name='owner_registration'),
-    url(r'^owner/login/$', Logout.as_view(), name='owner_login'),
+    url(r'^registration/$', api_view.register_view, name='user_registration'),
+    url(r'^login/$', api_view.login_view, name='user_login'),
+    url(r'^logout/', Logout.as_view(), name='user_logout'),
 ]
 
+# url(r'^register/$', views.register_view, name='register'),
 
 #(?P<pk>[^/.]+)/$
 
