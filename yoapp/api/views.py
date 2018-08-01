@@ -2,7 +2,6 @@ from django.shortcuts import render, HttpResponseRedirect
 from django.apps import apps
 from rest_framework import viewsets
 from rest_framework import generics
-from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 #from rest_framework.authentication import SessionAuthentication, BaseAuthentication
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -15,39 +14,106 @@ from django.contrib.auth import logout, login
 from django.http import HttpResponseRedirect
 from django.urls import reverse
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.response import Response
 from rest_framework import generics, mixins
 from rest_framework.authtoken.serializers import AuthTokenSerializer
 from rest_framework.authtoken.models import Token
 
+from django.contrib.auth import get_user_model
+from django.apps import apps
 
-from common.models import User, Category
-
-from . import serializers
+from .serializers import OfferSerializer, UserSerializer, CategorySerializer, ShopSerializer
 
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.settings import api_settings
+from rest_framework.pagination import LimitOffsetPagination
+
+
+UserModel = get_user_model()
+CategoryModel = apps.get_model('common', 'Category')
+OfferModel = apps.get_model('yomarket', 'Offer')
+ShopModel = apps.get_model('yomarket', 'Shop')
+
+
+class CategoryList(APIView):
+    permission_classes = (AllowAny,)
+    #pagination_class = api_settings.DEFAULT_PAGINATION_CLASS
+    #print (pagination_class)
+
+
+    def get(self, request, format=None):
+        paginator = LimitOffsetPagination()
+        categories = CategoryModel.objects.all()
+        result_page = paginator.paginate_queryset(categories, request)
+        serializer = CategorySerializer(result_page, many=True) # , context={'request': request}
+        #print (serializer)
+        response = Response(serializer.data, status=status.HTTP_200_OK)
+        return response
+
+    # def get(self, request, pk, format=None):
+    #     # user = request.user
+    #     event = Event.objects.get(pk=pk)
+    #     news = event.get_news_items().all()
+    #     paginator = LimitOffsetPagination()
+    #     result_page = paginator.paginate_queryset(news, request)
+    #     serializer = NewsItemSerializer(result_page, many=True, context={'request': request})
+    #     response = Response(serializer.data, status=status.HTTP_200_OK)
+    #     return response
+
+
+# class CategoryViewSet(viewsets.ReadOnlyModelViewSet):
+#     permission_classes = (AllowAny,)
+#     queryset = CategoryModel.objects.all()
+#     serializer_class = CategorySerializer
+
+
+class OfferList(APIView):
+    permission_classes = (AllowAny,)
+
+    def get(self, request, format=None, pk=None):
+        #print (request.user)
+        offers = OfferModel.objects.all()
+        if pk is not None:
+            offers = get_object_or_404(offers, pk=pk)
+            #print (offers)
+            #offers = OfferModel.objects.filter(pk=pk).all()
+            serializer = OfferSerializer(offers)
+            #print(serializer.is_valid())
+            #print (serializer.data)
+            #print(serializer.errors)
+        else:
+            serializer = OfferSerializer(offers, many=True)
+        return Response(serializer.data)
+
+
+class ShopList(APIView):
+    permission_classes = (AllowAny,)
+
+    def get(self, request, format=None):
+        shops = ShopModel.objects.all()
+        serializer = ShopSerializer(shops, many=True)
+        return Response(serializer.data)
+
 
 class Logout(APIView):
-    queryset = User.objects.all()
+    queryset = UserModel.objects.all()
 
     def get(self, request, format=None):
         # simply delete the token to force a login
         request.user.auth_token.delete()
-        return Response({"detail": "Successfully user logged out."}, status=status.HTTP_200_OK)
+        return Response({"detail": "Successfully user logged out"}, status=status.HTTP_200_OK)
 
 
 class UserViewSet(viewsets.ModelViewSet):
-    queryset = User.objects.filter(role='CUSTOMER').all()
-    serializer_class = serializers.UserSerializer
-
+    queryset = UserModel.objects.filter(role='CUSTOMER').all()
+    serializer_class = UserSerializer
     permission_classes = (IsAuthenticated,)
 
     def retrieve(self, request, pk=None):
-        queryset = User.objects.all()
+        queryset = UserModel.objects.filter(role='CUSTOMER').all()
         user = get_object_or_404(queryset, pk=pk)
-        serializer = serializers.UserSerializer(user)
+        serializer = UserSerializer(user)
         return Response(serializer.data)
 
     #@csrf_exempt
@@ -92,21 +158,7 @@ class UserViewSet(viewsets.ModelViewSet):
 
 
 
-class CategoryViewSet(viewsets.ReadOnlyModelViewSet):
-    permission_classes = (AllowAny,)
-    queryset = Category.objects.all()
-    serializer_class = serializers.CategorySerializer
 
 
 
 
-
-# from rest_framework.authtoken.models import Token
-#
-#
-# def create_auth_token(sender, instance=None, created=False, **kwargs):
-#     # Действие, рассчитанное на сигнал после создания записи пользователя.
-#     # Таким образом создаем ему автоматически токен.
-#     # Для этого нужно подключить rest_framework.authtoken в INSTALLED_APPS.
-#     if created:
-#         Token.objects.create(user=instance)

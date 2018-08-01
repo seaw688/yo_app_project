@@ -62,23 +62,15 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    #'django.contrib.auth.middleware.RemoteUserMiddleware',
-    #'common.utils.DisableCSRF',
 ]
 
 
 AUTHENTICATION_BACKENDS = [
-    'rest_framework.authentication.TokenAuthentication',
     'django.contrib.auth.backends.ModelBackend',
-    'rest_framework.authentication.SessionAuthentication',
-    'django.contrib.auth.backends.RemoteUserBackend',
     'allauth.account.auth_backends.AuthenticationBackend',
+    'rest_framework.authentication.TokenAuthentication',
+    'rest_framework.authentication.SessionAuthentication',
 ]
-
-
-# MIDDLEWARE_CLASSES = (
-#     'common.utils.DisableCSRF',
-# )
 
 ROOT_URLCONF = 'yoapp.urls'
 
@@ -165,7 +157,7 @@ AUTH_USER_MODEL = 'common.User'
 REST_FRAMEWORK = {
     'DEFAULT_FILTER_BACKENDS': ('django_filters.rest_framework.DjangoFilterBackend',),
     'DEFAULT_PERMISSION_CLASSES': [
-        #'rest_framework.permissions.AllowAny',
+        'rest_framework.permissions.AllowAny',
         'rest_framework.permissions.IsAuthenticated',
         #'rest_framework.permissions.DjangoModelPermissionsOrAnonReadOnly',
         #'rest_framework.permissions.IsAdminUser',
@@ -177,13 +169,15 @@ REST_FRAMEWORK = {
             #'rest_framework.authentication.SessionAuthentication',
             #'rest_framework.authentication.BasicAuthentication',
      ),
-    'PAGINATE_BY': 10
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
+    'PAGE_SIZE': 10
 }
 
 #REST_SESSION_LOGIN = False
 
+
 ACCOUNT_EMAIL_REQUIRED = False
-ACCOUNT_EMAIL_VERIFICATION = 'optional'
+ACCOUNT_EMAIL_VERIFICATION = 'none'
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
 
