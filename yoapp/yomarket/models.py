@@ -11,7 +11,7 @@ DISCOUNT_TYPES = (
 
 
 class Shop(models.Model):
-    user = models.ForeignKey('common.User', related_name='shops',
+    user = models.ForeignKey('common.User', related_name='shops_user',
                              on_delete = models.DO_NOTHING)
     title = models.CharField(max_length=200)
     address = models.CharField(max_length=200, blank=True)
@@ -19,10 +19,12 @@ class Shop(models.Model):
     def __str__(self):
         return self.title
 
+    # def __unicode__(self):
+    #     return self.title
 
 
 class Offer(models.Model):
-    category = models.ForeignKey('common.Category', related_name='offers',
+    category = models.ForeignKey('common.Category', related_name='offers_from_category',
                                  on_delete=models.DO_NOTHING)
     shop = models.ForeignKey(Shop, related_name='shop_offer',
                              on_delete=models.DO_NOTHING)
