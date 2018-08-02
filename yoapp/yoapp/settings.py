@@ -28,7 +28,7 @@ SECRET_KEY = 'jol*#-so3w%w9%n-nti^acl43escr7h46hw*k1pb4)vnn(h4gy'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '192.168.2.175']
 SITE_ID = 1
 
 # Application definition
@@ -169,8 +169,8 @@ REST_FRAMEWORK = {
             #'rest_framework.authentication.SessionAuthentication',
             #'rest_framework.authentication.BasicAuthentication',
      ),
-    #'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
-    #'PAGE_SIZE': 20
+    # 'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
+    # 'PAGE_SIZE': 10
 }
 
 #REST_SESSION_LOGIN = False
@@ -183,3 +183,4 @@ EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
 
 # 1234567890qaz - pass for registered test users
+# 000 - pass for postgres user on the 192.168.2.175
