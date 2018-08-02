@@ -12,7 +12,7 @@ from . import views as api_view
 
 router = routers.DefaultRouter()
 router.include_format_suffixes = False
-router.register(r'users', UserViewSet)
+router.register(r'users', UserViewSet, base_name='UserView')
 # router.register(r'categories', CategoryViewSet)
 
 
@@ -22,7 +22,7 @@ urlpatterns = router.urls
 #     re_path(r'^api-auth/', include('rest_framework.urls', namespace='rest_framework')),
 # ]
 
-login_kwargs = {}
+#login_kwargs = {}
 urlpatterns += [
     # url(r'^user/login/$', UserLoginView.as_view(), login_kwargs, name='login'),
     # url(r'^logout/$', views.logout, name='logout'),

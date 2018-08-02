@@ -52,8 +52,11 @@ def custom_api_response(serializer=None, content=None, metadata=None):
         response = {'metadata': {}, 'content': content}
         return response
 
-    if not hasattr(serializer, '_errors'):
-        response = {'metadata': {}, 'content': serializer.data}
+    if not hasattr(serializer, '_errors') or len(serializer._errors) == 0:
+        if hasattr(serializer, 'data'):
+            response = {'metadata': {}, 'content': serializer.data}
+        else:
+            response = {'metadata': {}, 'content': 'unknown'}
     else:
         response = {'metadata': {}, 'errors': serializer._errors}
     return response
@@ -67,11 +70,11 @@ class CategoryList(APIView):
 
 
     def get(self, request, format=None):
-        paginator = LimitOffsetPagination()
+        #paginator = LimitOffsetPagination()
         categories = CategoryModel.objects.all()
-        result_page = paginator.paginate_queryset(categories, request)
-        serializer = CategorySerializer(result_page, many=True) # , context={'request': request}
-        #print (serializer)
+        #print (categories)
+        #result_page = paginator.paginate_queryset(categories, request)
+        serializer = CategorySerializer(categories, many=True) # , context={'request': request}
         #response = Response(serializer.data, status=status.HTTP_200_OK)
         response = Response(custom_api_response(serializer), status=status.HTTP_200_OK)
         return response
@@ -94,7 +97,8 @@ class OfferList(APIView):
     def get(self, request, format=None, pk=None):
         offers = OfferModel.objects.all()
         if pk is not None:
-            offers = get_object_or_404(offers, pk=pk)
+            #offers = get_object_or_404(offers, pk=pk)
+            offers = OfferModel.objects.filter(pk=pk).all()
             serializer = OfferSerializer(offers)
         else:
             serializer = OfferSerializer(offers, many=True)
@@ -131,15 +135,16 @@ class Logout(APIView):
 
 
 class UserViewSet(viewsets.ModelViewSet):
-    queryset = UserModel.objects.filter(role='CUSTOMER').all()
+    #queryset = UserModel.objects.filter(role='CUSTOMER').all()
     serializer_class = CustomUserSerializer
     permission_classes = (IsAuthenticated,)
 
     def retrieve(self, request, pk=None):
-        queryset = UserModel.objects.filter(role='CUSTOMER').all()
-        user = get_object_or_404(queryset, pk=pk)
-        serializer = CustomUserSerializer(user)
-        #return Response(serializer.data)
+        #queryset = UserModel.objects.filter(role='CUSTOMER').all()
+        #user = get_object_or_404(queryset, pk=pk)
+        user = UserModel.objects.filter(role='CUSTOMER', pk=pk).all()
+        serializer = CustomUserSerializer(user, many=True)
+        #serializer.is_valid()
         response = Response(custom_api_response(serializer), status=status.HTTP_200_OK)
         return response
 
