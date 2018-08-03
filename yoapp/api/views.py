@@ -22,7 +22,7 @@ from django.contrib.auth import get_user_model
 from django.apps import apps
 
 from .serializers import OfferSerializer, CategorySerializer, ShopSerializer, \
-    CustomUserSerializer
+    CustomUserSerializer, LoginSerializer
 
 from rest_framework import status
 from rest_framework.response import Response
@@ -186,13 +186,14 @@ def register_view(request):
 @api_view(['POST'])
 @permission_classes(())
 def login_view(request):
-    serializer = AuthTokenSerializer(data=request.data)
+    #serializer = AuthTokenSerializer(data=request.data)
+    serializer = LoginSerializer(data=request.data)
     if serializer.is_valid():
         user = serializer.validated_data['user']
         token = create_token(TokenModel, user, serializer)
         #token = Token.objects.get(user=user)
         django_login(request, user)
-        content = {'token': token.key, 'username': user.username, 'id': user.id}
+        content = {'token': token.key, 'email': user.email, 'id': user.id}
         return Response(custom_api_response(serializer, content), status=status.HTTP_200_OK)
         #return Response({'token': token.key, 'username': user.username, 'id': user.id})
     else:
