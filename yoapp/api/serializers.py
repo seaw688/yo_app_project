@@ -1,7 +1,10 @@
 import sys
 sys.path.append("..")
 
+from django.utils.translation import ugettext_lazy as _
 from rest_framework import serializers
+from rest_framework.authtoken.serializers import AuthTokenSerializer
+from rest_framework.compat import authenticate
 from django.apps import apps
 from django.contrib.auth import get_user_model
 from django.conf import settings
@@ -50,6 +53,8 @@ class CustomUserSerializer(serializers.ModelSerializer):
         return value
 
     def create(self, validated_data):
+        print (validated_data)
+
         password = validated_data.pop('password', None)
         user = self.Meta.model(**validated_data)
         user.set_password(password)
@@ -61,6 +66,36 @@ class CustomUserSerializer(serializers.ModelSerializer):
         fields = ('id', 'password', 'username', 'first_name', 'last_name', 'email', 'role')
         write_only_fields = ('password',)
 
+
+
+class LoginSerializer(serializers.Serializer):
+    email = serializers.CharField(label=_("Email"))
+    password = serializers.CharField(
+        label=_("Password"),
+        style={'input_type': 'password'},
+        trim_whitespace=False
+    )
+
+    def validate(self, attrs):
+        email = attrs.get('email')
+        password = attrs.get('password')
+
+        if email and password:
+            user = authenticate(request=self.context.get('request'),
+                                email=email, password=password)
+
+            # The authenticate call simply returns None for is_active=False
+            # users. (Assuming the default ModelBackend authentication
+            # backend.)
+            if not user:
+                msg = _('Unable to log in with provided credentials.')
+                raise serializers.ValidationError(msg, code='authorization')
+        else:
+            msg = _('Must include "username" and "password".')
+            raise serializers.ValidationError(msg, code='authorization')
+
+        attrs['user'] = user
+        return attrs
 
 
 
