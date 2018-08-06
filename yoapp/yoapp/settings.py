@@ -47,6 +47,8 @@ INSTALLED_APPS = [
     'rest_auth.registration',
     'allauth',
     'allauth.account',
+    'mptt',
+    'django_filters',
     #'oauth2_provider',
     'common.apps.CommonConfig',
     'api.apps.ApiConfig',

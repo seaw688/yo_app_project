@@ -5,6 +5,7 @@ from django.db.models.signals import post_save
 from . import receivers
 from django.contrib.auth import get_user_model
 from django.conf import settings
+from mptt.models import MPTTModel, TreeForeignKey
 from . utils import ROLES, DEFAULT_USER_ROLE
 
 
@@ -37,19 +38,33 @@ class User(AbstractBaseUser, PermissionsMixin):
         return self.get_full_name()
 
 
+class Category(MPTTModel):
+    category_name = models.CharField(max_length=64, unique=True, null=True)
+    parent = TreeForeignKey('self', on_delete=models.CASCADE, null=True, blank=True, related_name='children')
 
-
-class Category(models.Model):
-    category_name = models.CharField(max_length=200)
-    parent = models.SmallIntegerField(default=0, editable=True)
+    class MPTTMeta:
+        level_attr = 'mptt_level'
+        order_insertion_by = ['category_name']
 
     class Meta:
-        ordering = ('category_name',)
         verbose_name = "category"
         verbose_name_plural = "categories"
 
     def __str__(self):
         return self.category_name
+
+
+# class Category(models.Model):
+#     name = models.CharField(max_length=200)
+#     parent = models.SmallIntegerField(default=0, editable=True)
+#
+#     class Meta:
+#         ordering = ('name',)
+#         verbose_name = "category"
+#         verbose_name_plural = "categories"
+#
+#     def __str__(self):
+#         return self.name
 
 
 class Region(models.Model):
