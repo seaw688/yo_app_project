@@ -17,12 +17,11 @@ from rest_auth.app_settings import create_token
 from ...views import custom_api_response
 from .serializers import CustomUserSerializer, LoginSerializer
 
-
 UserModel = get_user_model()
 
 
 class Logout(APIView):
-    #queryset = UserModel.objects.all()
+    # queryset = UserModel.objects.all()
 
     def get(self, request, format=None):
         # simply delete the token to force a login
@@ -38,16 +37,16 @@ class Logout(APIView):
 
 
 class UserViewSet(viewsets.ModelViewSet):
-    #queryset = UserModel.objects.filter(role='CUSTOMER').all()
+    # queryset = UserModel.objects.filter(role='CUSTOMER').all()
     serializer_class = CustomUserSerializer
     permission_classes = (IsAuthenticated,)
 
     def retrieve(self, request, pk=None):
-        #queryset = UserModel.objects.filter(role='CUSTOMER').all()
-        #user = get_object_or_404(queryset, pk=pk)
+        # queryset = UserModel.objects.filter(role='CUSTOMER').all()
+        # user = get_object_or_404(queryset, pk=pk)
         user = UserModel.objects.filter(role='CUSTOMER', pk=pk).all()
         serializer = CustomUserSerializer(user, many=True)
-        #serializer.is_valid()
+        # serializer.is_valid()
         response = Response(custom_api_response(serializer), status=status.HTTP_200_OK)
         return response
 
@@ -58,12 +57,12 @@ class UserViewSet(viewsets.ModelViewSet):
         # if page is not None:
         #     serializer = self.get_serializer(page, many=True)
         #     return self.get_paginated_response(serializer.data)
-        #serializer = self.get_serializer(queryset, many=True)
+        # serializer = self.get_serializer(queryset, many=True)
         serializer = CustomUserSerializer(users, many=True)
 
         return Response(custom_api_response(serializer), status=status.HTTP_200_OK)
 
-    #@csrf_exempt
+    # @csrf_exempt
     # def create(self, validated_data):
     #     self.permission_classes = (AllowAny,)
     #     #print (self)
@@ -93,7 +92,7 @@ def register_view(request):
 @api_view(['POST'])
 @permission_classes(())
 def login_view(request):
-    #serializer = AuthTokenSerializer(data=request.data)
+    # serializer = AuthTokenSerializer(data=request.data)
     if request.user.is_authenticated == True:
         error = {"detail": "You must have to log out first"}
         return Response(custom_api_response(errors=error), status=status.HTTP_400_BAD_REQUEST)
@@ -102,11 +101,53 @@ def login_view(request):
     if serializer.is_valid():
         user = serializer.validated_data['user']
         token = create_token(TokenModel, user, serializer)
-        #token = Token.objects.get(user=user)
+        # token = Token.objects.get(user=user)
         django_login(request, user)
         content = {'token': token.key, 'email': user.email, 'id': user.id}
         return Response(custom_api_response(serializer, content), status=status.HTTP_200_OK)
-        #return Response({'token': token.key, 'username': user.username, 'id': user.id})
+        # return Response({'token': token.key, 'username': user.username, 'id': user.id})
     else:
         return Response(custom_api_response(serializer), status=status.HTTP_400_BAD_REQUEST)
 
+
+import facebook
+
+
+@api_view(['POST'])
+@permission_classes(())
+def facebook_oauth(request):
+
+    if request.user.is_authenticated == True:
+        error = {"detail": "You must have to log out first"}
+        return Response(custom_api_response(errors=error), status=status.HTTP_400_BAD_REQUEST)
+
+
+
+    access_token = request.data['access_token']
+    graph = facebook.GraphAPI(access_token)
+    args = {'fields': 'id,email,birthday,gender,first_name,last_name,picture.height(300)'}
+    profile = graph.get_object('me', **args)
+
+
+    photo = profile.get('picture',{}).get('data',{}).get('url',{})
+    first_name = profile.get('first_name')
+    last_name = profile.get('last_name')
+    gender=profile.get('gender')
+    birthday=profile.get('birthday')
+
+    email=request.data['email']
+
+    def create_login_token(user):
+        serializer = LoginSerializer()
+        token = create_token(TokenModel, user, serializer)
+        return token
+
+    try:
+        user = UserModel.objects.get(email=email)
+    except UserModel.DoesNotExist:
+        user = UserModel(email=email, last_name=last_name, first_name=first_name)
+        user.save()
+
+    token = create_login_token(user)
+
+    return Response({'token': token.key})
