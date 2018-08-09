@@ -15,4 +15,4 @@ def test_func(request):
     user=request.user
     device = GCMDevice.objects.get(user=user)
     device.send_message("You've got mail")
-    return Response("kek ok")
+    return Response("ok")
