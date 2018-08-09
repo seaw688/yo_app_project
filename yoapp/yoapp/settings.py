@@ -14,9 +14,9 @@ import os, sys
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-#sys.path.insert(0, os.path.join(BASE_DIR, 'api'))
-#sys.path.insert(0, os.path.join(BASE_DIR, 'common'))
-#print(BASE_DIR)
+# sys.path.insert(0, os.path.join(BASE_DIR, 'api'))
+# sys.path.insert(0, os.path.join(BASE_DIR, 'common'))
+# print(BASE_DIR)
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/2.0/howto/deployment/checklist/
 
@@ -49,11 +49,13 @@ INSTALLED_APPS = [
     'allauth.account',
     'mptt',
     'django_filters',
-    #'oauth2_provider',
+    # 'oauth2_provider',
     'common.apps.CommonConfig',
     'api.apps.ApiConfig',
     'account.apps.AccountConfig',
-    'yomarket.apps.YomarketConfig'
+    'yomarket.apps.YomarketConfig',
+
+    'push_notifications'
 ]
 
 MIDDLEWARE = [
@@ -65,7 +67,6 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
-
 
 AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',
@@ -95,22 +96,16 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'yoapp.wsgi.application'
 
-
 # Database
 # https://docs.djangoproject.com/en/2.0/ref/settings/#databases
 # the root postgre user: postgres/111
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'yodb',
-        'USER': 'yodbuser',
-        'PASSWORD': 'yodbpassword',
-        'HOST': '127.0.0.1',
-        'PORT': '5432',
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
     }
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/2.0/ref/settings/#auth-password-validators
@@ -130,7 +125,6 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
 # Internationalization
 # https://docs.djangoproject.com/en/2.0/topics/i18n/
 
@@ -143,7 +137,6 @@ USE_I18N = True
 USE_L10N = True
 
 USE_TZ = True
-
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/2.0/howto/static-files/
@@ -161,21 +154,21 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.AllowAny',
         'rest_framework.permissions.IsAuthenticated',
-        #'rest_framework.permissions.DjangoModelPermissionsOrAnonReadOnly',
-        #'rest_framework.permissions.IsAdminUser',
+        # 'rest_framework.permissions.DjangoModelPermissionsOrAnonReadOnly',
+        # 'rest_framework.permissions.IsAdminUser',
     ],
     'DEFAULT_AUTHENTICATION_CLASSES': (
-            #'rest_framework_jwt.authentication.JSONWebTokenAuthentication',
-            'rest_framework.authentication.TokenAuthentication',
-            #'oauth2_provider.contrib.rest_framework.OAuth2Authentication',
-            #'rest_framework.authentication.SessionAuthentication',
-            #'rest_framework.authentication.BasicAuthentication',
-     ),
+        # 'rest_framework_jwt.authentication.JSONWebTokenAuthentication',
+        'rest_framework.authentication.TokenAuthentication',
+        # 'oauth2_provider.contrib.rest_framework.OAuth2Authentication',
+        # 'rest_framework.authentication.SessionAuthentication',
+        # 'rest_framework.authentication.BasicAuthentication',
+    ),
     # 'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
     # 'PAGE_SIZE': 10
 }
 
-#REST_SESSION_LOGIN = False
+# REST_SESSION_LOGIN = False
 
 # ACCOUNT_EMAIL_REQUIRED = False
 # ACCOUNT_EMAIL_VERIFICATION = 'none'
@@ -189,3 +182,10 @@ EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
 # 1234567890qaz - pass for registered test users
 # 000 - pass for postgres user on the 192.168.2.175
+
+
+PUSH_NOTIFICATIONS_SETTINGS = {
+    "FCM_API_KEY": "AAAASwElybY:APA91bFaTT_zKLcLYqB0soW8PJmFFG7x1F3wiR0MGta9lLsU22uAVa0VD_3zzz-OremJKDEWEf52OD554byamcwAmZldgrQKfwAjjbhZz_5DYT-z1gcflUBFSWVQQ9lSE9KwDBNHULvfVKmQwxa7xNwuPHz-VfdTbw",
+    'USER_MODEL': 'common.User',
+    'UPDATE_ON_DUPLICATE_REG_ID':True
+}
